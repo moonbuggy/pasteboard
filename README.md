@@ -43,6 +43,9 @@ ORIGIN=pasteboard.co
 ```
 
 ##### Time sewage
+
+Time, in days, to keep images. Set to `false` for unlimited.
+
 ```
 MAX=7
 ```

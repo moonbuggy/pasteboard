@@ -1,3 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 
-find "/pasteboard/public/storage" -type f \( -iname \*.jpg -o -iname \*.png -o -iname \*.gif -o -iname \*.jpeg -o -iname \*.svg+xml \) -mtime +${MAX} -exec rm {} \;
+[ ! -z "${MAX}" ] && case ${MAX} in
+  *[!0-9]*)
+    true  # do nothing
+    ;;
+  *)
+    find "/pasteboard/public/storage" -type f \( -iname \*.jpg -o -iname \*.png -o -iname \*.gif -o -iname \*.jpeg -o -iname \*.svg+xml \) -mtime +${MAX} -exec rm {} \;
+    ;;
+esac
