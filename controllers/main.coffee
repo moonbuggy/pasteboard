@@ -1,13 +1,13 @@
 ###
 # Main (Index) Controller
 ###
-fs = require "fs.extra"
+fs = require "fs-extra"
 async = require "async"
 request = require "request"
 formidable = require "formidable"
 auth = require "../auth"
 helpers = require "../helpers/common"
-uaParser = require("ua-parser")
+useragent = require("useragent")
 
 FILE_SIZE_LIMIT = 10 * 1024 * 1024 # 10 MB
 
@@ -21,7 +21,7 @@ get.index = (req, res) ->
     redirected: false
     useAnalytics: false
     trackingCode: ""
-    browser: uaParser.parseUA(req.headers["user-agent"]).family
+    browser: useragent.parse(req.headers["user-agent"]).family
     uploads: []
 
   # Use Google Analytics when not running locally
@@ -73,13 +73,13 @@ post.preupload = (req, res) ->
   form.on "aborted", ->
     # Remove temporary files that were in the process of uploading
     for file in incomingFiles
-      fs.unlink file.path, (-> )
+      fs.unlink file.filepath, (-> )
 
   form.parse req, (err, fields, files) ->
     client = req.app.get("clients")[fields.id]
     if client
       # Remove the old file
-      fs.unlink(client.file.path, (-> )) if client.file
+      fs.unlink(client.file.filepath, (-> )) if client.file
       client.file = files.file
 
     res.send "Received file"
@@ -90,7 +90,7 @@ post.preupload = (req, res) ->
 # request.
 post.upload = (req, res) ->
   form = new formidable.IncomingForm()
-  knox = req.app.get "knox"
+  knox = req.app.get "knox-mime"
   incomingFiles = []
 
   form.parse req, (err, fields, files) ->
@@ -99,9 +99,9 @@ post.upload = (req, res) ->
     # Check for either a posted or preuploaded file
     if files.file
       file = files.file
-    else if client and client.file and not client.uploading[client.file.path]
+    else if client and client.file and not client.uploading[client.file.filepath]
       file = client.file
-      client.uploading[file.path] = true
+      client.uploading[file.filepath] = true
 
     unless file
       console.log("Missing file")
@@ -111,11 +111,11 @@ post.upload = (req, res) ->
       console.log("File too large")
       return res.send "File too large", 500
 
-    fileName = helpers.generateFileName(file.type.replace "image/", "")
+    fileName = helpers.generateFileName(file.mimetype.replace "image/", "")
     domain = if req.app.get "localrun" then req.headers.host else req.app.get "domain"
     protocol = req.protocol
     longURL = "#{protocol}://#{domain}/#{fileName}"
-    sourcePath = file.path
+    sourcePath = file.filepath
 
     parallels = {}
     if knox
@@ -124,7 +124,7 @@ post.upload = (req, res) ->
         knox.putFile(
           sourcePath,
           "#{req.app.get "amazonFilePath"}#{fileName}",
-            "Content-Type": file.type
+            "Content-Type": file.mimetype
             "x-amz-acl": "private"
           ,
           callback
@@ -175,7 +175,7 @@ post.upload = (req, res) ->
 
   form.on "aborted", ->
     # Remove temporary files that were in the process of uploading
-    fs.unlink(incomingFile.path, (-> ))  for incomingFile in incomingFiles
+    fs.unlink(incomingFile.filepath, (-> ))  for incomingFile in incomingFiles
 
 
 # Remove a preuploaded file from the given client ID, called
@@ -185,7 +185,7 @@ post.clearfile = (req, res) ->
   form.parse req, (err, fields, files) ->
     client = req.app.get("clients")[fields.id]
     if client and client.file
-      fs.unlink client.file.path, (-> )
+      fs.unlink client.file.filepath, (-> )
       client.file = null;
     res.send "Cleared"
 

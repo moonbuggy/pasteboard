@@ -41,7 +41,7 @@ get.download = (req, res) ->
 # Delete the image
 post.delete = (req, res) ->
   if helpers.isImageOwner req, req.params.image
-    knox = req.app.get "knox"
+    knox = req.app.get "knox-mime"
     if knox
       knox.deleteFile "#{req.app.get "amazonFilePath"}#{req.params.image}", ->
     else
@@ -72,5 +72,3 @@ exports.routes =
     ":image/download": get.download
   post:
     ":image/delete": post.delete
-
-
