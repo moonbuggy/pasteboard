@@ -3,11 +3,11 @@
 ###
 fs = require "fs-extra"
 async = require "async"
-request = require "request"
+undici = require "undici"
 formidable = require "formidable"
 auth = require "../auth"
 helpers = require "../helpers/common"
-useragent = require("useragent")
+useragent = require "useragent"
 
 FILE_SIZE_LIMIT = 10 * 1024 * 1024 # 10 MB
 
@@ -57,10 +57,24 @@ get.redirected = (req, res) ->
 # Proxy for external images, used get around
 # cross origin restrictions
 get.imageProxy = (req, res) ->
-  try
-    (request (decodeURIComponent req.params.image)).pipe res
-  catch e
+  # undici stream
+  undici.stream (decodeURIComponent req.params.image)
+
+  , ({ statusCode, headers, opaque }) ->
+    res.status statusCode
+    res.set headers
+    return res
+
+  , (err) ->
+    console.log 'ERROR', err
     res.send "Failure", 500
+
+  # undici request
+  # undici.request (decodeURIComponent req.params.image)
+  # .then (response) ->
+  #   response.pipe res
+  # .catch(err) ->
+  #   res.send "Failure", 500
 
 # Preuploads an image and stores it in /tmp
 post.preupload = (req, res) ->

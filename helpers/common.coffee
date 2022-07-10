@@ -2,7 +2,6 @@
 # A collection of common helper methods
 ###
 
-request = require "request"
 auth = require "../auth"
 
 # Generates a unique file name with the given file type.

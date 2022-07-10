@@ -1,7 +1,7 @@
 ###
 # Images Controller
 ###
-request = require "request"
+undici = require "undici"
 auth = require "../auth"
 helpers = require "../helpers/common"
 
@@ -12,7 +12,7 @@ post = {}
 exports.index = get.index = (req, res) ->
   viewData =
     imageName: req.params.image
-    imageURL: helpers.imageURL req, req.params.image
+    imageURL: "/storage/#{req.params.image}"
     longURL: "#{req.app.get("domain")}/#{req.params.image}"
     useAnalytics: false
     trackingCode: ""
@@ -30,13 +30,36 @@ exports.index = get.index = (req, res) ->
 
 # Image download URL
 get.download = (req, res) ->
-  imageRequest = request
-    url: helpers.imageURL req, req.params.image
+  #undici stream
+  undici.stream helpers.imageURL(req, req.params.image),
     headers:
       "Referer": req.headers.referer
 
-  res.set "Content-Disposition", "attachment; filename=#{req.params.image}"
-  imageRequest.pipe res
+    , ({ statusCode, headers, opaque }) ->
+      res.status statusCode
+      if statusCode==200
+        res.append "Content-Disposition", "attachment; filename=#{req.params.image}"
+
+      res.set headers
+      return res
+
+    , (err) ->
+      console.log 'ERROR', err
+      res.status(500).end()
+
+  #undici request
+  # imageRequest = undici.request helpers.imageURL(req, req.params.image),
+  #   method: 'GET'
+  #   headers:
+  #     "Referer": req.headers.referer
+  #
+  # .then (response) ->
+  #   res.set "Content-Disposition", "attachment; filename=#{req.params.image}"
+  #   response.body.pipe res
+  #
+  # .catch (error) ->
+  #   console.log 'ERROR', error
+  #   res.status(500).end()
 
 # Delete the image
 post.delete = (req, res) ->
@@ -58,9 +81,11 @@ post.delete = (req, res) ->
         body: {
           files: [helpers.imageURL req, req.params.image]
         }
+        method: 'DELETE'
 
-      request.del params, (error) ->
-        console.log("Cloudflare error", error) if error
+      undici.request(params)
+        .catch(error) ->
+          console.log("Cloudflare error", error)
 
     helpers.removeImageOwner res, req.params.image
     res.send "Success"

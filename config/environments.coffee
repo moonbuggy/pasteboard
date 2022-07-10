@@ -20,7 +20,7 @@ exports.init = (app, express) ->
   app.use methodOverride("X-HTTP-Method")
   app.use methodOverride("X-HTTP-Method-Override")
   app.use methodOverride("X-Method-Override")
-  app.use require("connect-assets")()
+  app.use require("connect-assets")(sourceMaps : false)
   app.use express.static("#{__dirname}/../public")
 
   # Set

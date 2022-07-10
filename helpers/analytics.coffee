@@ -7,7 +7,7 @@ fs = require "fs"
 crypto = require "crypto"
 
 _ = require "underscore"
-request = require "request"
+undici = require "undici"
 
 auth = require "../auth"
 
@@ -61,37 +61,35 @@ authorize = (callback) ->
   signature = cipher.sign signatureKey, "base64"
   jwt = signatureInput + "." + urlEscape signature
 
-  request
-    method: "POST"
+  undici.request "https://accounts.google.com/o/oauth2/token",
+    method: 'POST'
     headers:
       "Content-Type": "application/x-www-form-urlencoded"
+    body:
+      grant_type: escape("urn:ietf:params:oauth:grant-type:jwt-bearer")
+      assertion: jwt
 
-    uri: "https://accounts.google.com/o/oauth2/token"
-    body: "grant_type=" +
-      escape("urn:ietf:params:oauth:grant-type:jwt-bearer") +
-      "&assertion=" + jwt
-
-  , (error, response, body) ->
-    if error
-      callback new Error(error)
+  .then (response) ->
+    result = JSON.parse(response.body)
+    if result.error
+      callback new Error(result.error)
     else
-      result = JSON.parse(body)
-      if result.error
-        callback new Error(result.error)
-      else
-        token = {
-          value: result.access_token
-          expires: now + result.expires_in
-        }
+      token = {
+        value: result.access_token
+        expires: now + result.expires_in
+      }
+      callback null, token.value
 
-        callback null, token.value
+  .catch (error) ->
+    callback new Error(error)
+
 
 # Fetch the total number of unique page views for the given path
 exports.getTotalViews = (path, callback) ->
   authorize (err, token) ->
     return console.log err if err
 
-    request
+    undici.request API_URL,
       method: "GET"
       headers:
         "Authorization": "Bearer #{token}"
@@ -102,10 +100,12 @@ exports.getTotalViews = (path, callback) ->
         "dimensions": "ga:pagePath"
         "metrics": "ga:uniquePageviews"
         "filters": "ga:pagePath==#{path}"
-      uri: API_URL
-    , (err, res, body) ->
-      return callback err if err
-      data = JSON.parse(body)
+
+    .then (response) ->
+      data = JSON.parse(response.body)
       return callback data.error if data.error
 
       callback null, data.rows?[0]?[1]
+
+    .catch (error) ->
+      return callback error
