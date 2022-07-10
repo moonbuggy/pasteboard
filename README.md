@@ -63,20 +63,20 @@ Readiness status is also available via `http://{ORIGIN}/status`.
 
 #### Exposition
 
-You can expose the port 4000 on all interface like that :
+You can expose the port 3000 on all interface like that :
 
 ```
 docker run --name pastebaord \
 -e ORIGIN=mydomain.tld \
--p 4000:4000 \
+-p 3000:3000 \
 anthodingo/docker-pasteboard
 ```
 
-Or you can bind the port 4000 only on loopback (127.0.0.1) like : (more secure)
+Or you can bind the port 3000 only on loopback (127.0.0.1) like : (more secure)
 ```
 docker run -d --name pastebaord \
  -e ORIGIN=mydomain.tld \
- -p 127.0.0.1:4000:4000 \
+ -p 127.0.0.1:3000:3000 \
  anthodingo/docker-pasteboard
 ```
 
@@ -86,7 +86,7 @@ docker run -d --name pastebaord \
 You can store data and config externaly of container :
 ```
 docker run -d --name pasteboard \
--p 4000:4000 \
+-p 3000:3000 \
 -v /srv/pasteboard/images:/pasteboard/public/storage \
 anthodingo/docker-pasteboard
 ```
@@ -98,7 +98,7 @@ This exemple work in production :
 
 ```
 upstream pasteboard {
-   server 127.0.0.1:4000;
+   server 127.0.0.1:3000;
 }
 
 server {

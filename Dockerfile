@@ -22,6 +22,6 @@ ENV ORIGIN pasteboard.co
 ENV MAX 7
 
 VOLUME ["/pasteboard/public/storage/"]
-EXPOSE 4000
+EXPOSE 3000
 
 CMD ["/bin/sh", "-c", "/pasteboard/run_local"]
