@@ -50,6 +50,17 @@ Time, in days, to keep images. Set to `false` for unlimited.
 MAX=7
 ```
 
+##### Readiness Notification
+
+If set to an integer, the corresponding file descriptor will get a newline written to it once Pasteboard is started.
+This is useful in some init systems to indicate the service is ready.
+
+```
+READY_FD=false
+```
+
+Readiness status is also available via `http://{ORIGIN}/status`.
+
 #### Exposition
 
 You can expose the port 4000 on all interface like that :

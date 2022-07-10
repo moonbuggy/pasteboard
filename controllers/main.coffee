@@ -8,6 +8,7 @@ formidable = require "formidable"
 auth = require "../auth"
 helpers = require "../helpers/common"
 useragent = require "useragent"
+readinessManager = require "readiness-manager"
 
 FILE_SIZE_LIMIT = 10 * 1024 * 1024 # 10 MB
 
@@ -75,6 +76,19 @@ get.imageProxy = (req, res) ->
   #   response.pipe res
   # .catch(err) ->
   #   res.send "Failure", 500
+
+get.statusCheck = (req, res) ->
+  status =
+    uptime: process.uptime()
+    timestamp: Date.now()
+    message: 'OK'
+    readiness: readinessManager.status()
+    ready: readinessManager.ready
+  try
+    res.send status
+  catch error
+    statuscheck.message = error
+    res.status(503).send(status)
 
 # Preuploads an image and stores it in /tmp
 post.preupload = (req, res) ->
@@ -208,6 +222,7 @@ exports.routes =
     "": get.index
     "redirected": get.redirected
     "imageproxy/:image": get.imageProxy
+    "status": get.statusCheck
   post:
     "upload": post.upload
     "clearfile": post.clearfile
