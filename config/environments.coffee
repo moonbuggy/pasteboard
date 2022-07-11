@@ -15,7 +15,12 @@ exports.init = (app, express) ->
   # Use
   app.use serveFavicon("#{__dirname}/../public/images/favicon.ico")
   app.use express.json({ limit: '10MB' });
-  app.use morgan("dev") if process.env.LOCAL
+  app.use morgan('dev', skip: (req, res) ->
+    if req.url == '/status'
+      true
+    else
+      false
+  ) if process.env.LOCAL
   app.use cookieParser()
   app.use methodOverride("X-HTTP-Method")
   app.use methodOverride("X-HTTP-Method-Override")

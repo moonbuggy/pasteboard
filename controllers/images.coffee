@@ -14,6 +14,7 @@ exports.index = get.index = (req, res) ->
     imageName: req.params.image
     imageURL: "/storage/#{req.params.image}"
     longURL: "#{req.app.get("domain")}/#{req.params.image}"
+    embedURL: helpers.imageURL req, req.params.image
     useAnalytics: false
     trackingCode: ""
     isImageOwner: helpers.isImageOwner req, req.params.image
